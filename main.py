@@ -5,6 +5,7 @@ from typing import Any, Optional, List
 
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어 import 추가
 from pydantic import BaseModel, Field, ConfigDict
 
 from sqlalchemy import create_engine, select, text
@@ -30,6 +31,15 @@ engine = create_engine(
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
 app = FastAPI(title="Users/Groups API", version="1.0.0")
+
+# CORS 미들웨어 추가
+app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"]
+)
 
 
 # -------------------------------------
