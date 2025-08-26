@@ -2,7 +2,15 @@
 
 ## how to run:
 
+* backend with uv
 ```shell
 uv sync
 uv uvicorn main:app
+```
+
+* frontend with npm
+```shell
+cd frontend
+npm install
+npm run dev
 ```
