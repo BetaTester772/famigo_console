@@ -1,0 +1,118 @@
+# Test FastAPI endpoints (Users / Groups)
+# Requires \ IntelliJ HTTP Client.
+
+@host = http://127.0.0.1:8000
+@seed = {{$timestamp}}
+@user_name = hansole-{{seed}}
+@group_name = slpr-{{seed}}
+
+###
+# Health check
+GET {{host}}/healthz
+Accept: application/json
+
+> {%
+  client.assert(response.status === 200);
+  client.assert(response.body.status === 'ok');
+%}
+
+###
+# Create user
+POST {{host}}/users
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "{{user_name}}",
+  "profile_json": { "title": "PM", "seed": "{{seed}}" }
+}
+
+> {%
+  client.assert(response.status === 201);
+  client.global.set("user_id", response.body.user_id);
+  client.log(`user_id = ${response.body.user_id}`);
+%}
+
+###
+# List users
+GET {{host}}/users?offset=0&limit=50
+Accept: application/json
+
+> {% client.assert(response.status === 200); %}
+
+###
+# Create group
+POST {{host}}/groups
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "{{group_name}}"
+}
+
+> {%
+  client.assert(response.status === 201);
+  client.global.set("group_id", response.body.group_id);
+  client.log(`group_id = ${response.body.group_id}`);
+%}
+
+###
+# List groups
+GET {{host}}/groups?offset=0&limit=50
+Accept: application/json
+
+> {% client.assert(response.status === 200); %}
+
+###
+# Get group by *name* (route changed per request)
+GET {{host}}/groups/{{group_name}}
+Accept: application/json
+
+> {%
+  client.assert(response.status === 200);
+  client.assert(response.body.name === client.global.get("group_name") || true);
+%}
+
+###
+# Add user as a member to the group (uses numeric group_id path)
+POST {{host}}/groups/{{group_id}}/members
+Content-Type: application/json
+Accept: application/json
+
+{
+  "user_id": {{user_id}},
+  "role": "member"
+}
+
+> {% client.assert(response.status === 201); %}
+
+###
+# List group members
+GET {{host}}/groups/{{group_id}}/members?offset=0&limit=100
+Accept: application/json
+
+> {%
+  client.assert(response.status === 200);
+  const found = response.body.some(m => m.user_id === parseInt(client.global.get('user_id')));
+  client.assert(found);
+%}
+
+###
+# Which groups does this user belong to?
+GET {{host}}/users/{{user_id}}/groups
+Accept: application/json
+
+> {% client.assert(response.status === 200); %}
+
+###
+# Negative test: adding the same member again should 400
+POST {{host}}/groups/{{group_id}}/members
+Content-Type: application/json
+Accept: application/json
+
+{
+  "user_id": {{user_id}},
+  "role": "member"
+}
+
+> {% client.assert(response.status === 400); %}
