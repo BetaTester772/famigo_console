@@ -97,6 +97,7 @@
     }
 
     async function handleListMembers() {
+        if (!selectedGroupId) return;
         try {
             members = await api.listMembers(Number(selectedGroupId));
         } catch (e) {
@@ -106,29 +107,22 @@
     }
 
     async function handleAddMember() {
-        // 가드 + 명확한 피드백
         if (!selectedGroupId) {
-            fail(new Error('Select a group first'));
+            fail(new Error('그룹을 먼저 선택하세요.'));
             return;
         }
         if (!memberUserId || Number.isNaN(Number(memberUserId))) {
-            fail(new Error('Enter a valid user_id (number)'));
+            fail(new Error('user_id를 숫자로 입력하세요.'));
             return;
         }
-
         const gid = Number(selectedGroupId);
         const payload = {user_id: Number(memberUserId), role: memberRole || 'member'};
-
-        // 실행 로그 (여기까지 오면 on:click은 정상 동작)
         console.log('[AddMember] About to POST', {gid, payload});
-
         try {
-            const res = await api.addMember(gid, payload);     // <-- 실제 fetch
-            console.log('[AddMember] OK', res);
+            const res = await api.addMember(gid, payload);
             notify(`Added user #${res.user_id} to group #${res.group_id} as ${res.role}.`);
             await handleListMembers();
         } catch (e) {
-            console.error('[AddMember] FAIL', e);
             fail(e);
         }
     }
@@ -516,7 +510,8 @@
                         >
                             <option value="" disabled>Select group…</option>
                             {#each groups as g}
-                                <option value={g.group_id}>{g.group_id} · {g.name}</option>
+                                <!-- 중요: value를 문자열로 강제 -->
+                                <option value={String(g.group_id)}>{g.group_id} · {g.name}</option>
                             {/each}
                         </select>
                         <button class="ghost" on:click={handleListMembers} disabled={!selectedGroupId}>Reload</button>
