@@ -106,6 +106,10 @@
     }
 
     async function handleAddMember() {
+        if (!selectedGroupId || !memberUserId) {   // guard
+            fail(new Error('Select a group and enter user_id'));
+            return;
+        }
         try {
             const res = await api.addMember(Number(selectedGroupId), {
                 user_id: Number(memberUserId),
