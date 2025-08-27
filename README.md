@@ -5,7 +5,7 @@
 * backend with uv
 ```shell
 uv sync
-uv uvicorn main:app
+uv run uvicorn main:app
 ```
 
 * frontend with npm
