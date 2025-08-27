@@ -106,18 +106,29 @@
     }
 
     async function handleAddMember() {
-        if (!selectedGroupId || !memberUserId) {   // guard
-            fail(new Error('Select a group and enter user_id'));
+        // 가드 + 명확한 피드백
+        if (!selectedGroupId) {
+            fail(new Error('Select a group first'));
             return;
         }
+        if (!memberUserId || Number.isNaN(Number(memberUserId))) {
+            fail(new Error('Enter a valid user_id (number)'));
+            return;
+        }
+
+        const gid = Number(selectedGroupId);
+        const payload = {user_id: Number(memberUserId), role: memberRole || 'member'};
+
+        // 실행 로그 (여기까지 오면 on:click은 정상 동작)
+        console.log('[AddMember] About to POST', {gid, payload});
+
         try {
-            const res = await api.addMember(Number(selectedGroupId), {
-                user_id: Number(memberUserId),
-                role: memberRole
-            });
+            const res = await api.addMember(gid, payload);     // <-- 실제 fetch
+            console.log('[AddMember] OK', res);
             notify(`Added user #${res.user_id} to group #${res.group_id} as ${res.role}.`);
             await handleListMembers();
         } catch (e) {
+            console.error('[AddMember] FAIL', e);
             fail(e);
         }
     }
@@ -490,7 +501,6 @@
                         >
                             <option value="" disabled>Select group…</option>
                             {#each groups as g}
-                                <!-- value는 문자열이지만 handleListMembers에서 Number(...)로 처리하므로 OK -->
                                 <option value={g.group_id}>{g.group_id} · {g.name}</option>
                             {/each}
                         </select>
@@ -506,9 +516,16 @@
                 <div class="row">
                     <input placeholder="user_id" bind:value={memberUserId}/>
                     <input placeholder="role (default: member)" bind:value={memberRole}/>
-                    <button on:click={handleAddMember} class="success" disabled={!selectedGroupId || !memberUserId}>
+                    <!--                    <button on:click={handleAddMember} class="success" disabled={!selectedGroupId || !memberUserId}>-->
+                    <!--                        Add-->
+                    <!--                    </button>-->
+                    <button
+                            class="success"
+                            on:click={() => { console.log('[UI] Add clicked'); handleAddMember(); }}
+                    >
                         Add
                     </button>
+
                 </div>
 
                 <hr class="soft"/>
