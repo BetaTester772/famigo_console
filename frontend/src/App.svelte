@@ -132,6 +132,18 @@
             fail(e);
         }
     }
+
+    // groups가 갱신되고 아직 아무것도 선택 안 했으면 첫 그룹 자동 선택
+    $: if (groups.length > 0 && !selectedGroupId) {
+        selectedGroupId = String(groups[0].group_id);
+    }
+
+    // Members 탭에 들어오면 멤버 자동 로드 (selectedGroupId가 유효할 때)
+    $: if (active === 'members' && selectedGroupId) {
+        // 중복 호출을 막고 싶다면 간단히 플래그를 둘 수도 있음
+        handleListMembers();
+    }
+
 </script>
 
 <style>
@@ -319,7 +331,10 @@
     <div class="tabs" style="margin: 14px 0 10px;">
         <div class="tab {active==='users'?'active':''}" on:click={() => active='users'}>Users</div>
         <div class="tab {active==='groups'?'active':''}" on:click={() => active='groups'}>Groups</div>
-        <div class="tab {active==='members'?'active':''}" on:click={() => active='members'}>Group Members</div>
+        <div class="tab {active==='members'?'active':''}"
+             on:click={async () => { active = 'members'; if (groups.length === 0) await refreshGroups(); }}>
+            Group Members
+        </div>
         <div class="tab {active==='diag'?'active':''}" on:click={() => active='diag'}>Diagnostics</div>
     </div>
 
@@ -521,7 +536,10 @@
                     <!--                    </button>-->
                     <button
                             class="success"
-                            on:click={() => { console.log('[UI] Add clicked'); handleAddMember(); }}
+                            on:click={() => {
+    console.log('[UI] Add clicked', { selectedGroupId, memberUserId, memberRole });
+    handleAddMember();
+  }}
                     >
                         Add
                     </button>
